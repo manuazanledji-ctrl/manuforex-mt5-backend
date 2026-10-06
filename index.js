@@ -1,5 +1,5 @@
-import express from 'express';
-import fetch from 'node-fetch';
+importer express depuis 'express';
+importer fetch depuis 'node-fetch';
 
 const app = express();
 app.use(express.json());
@@ -9,9 +9,9 @@ app.use(express.json());
 // (Render/Railway), jamais dans le code source ni dans l'app mobile.
 const METAAPI_TOKEN = process.env.METAAPI_TOKEN;
 
-const PROVISIONING_BASE = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
+const PROVISIONING_BASE = ' https://mt-provisioning-api- v1.agiliumtrade.agiliumtrade. ai ';
 
-if (!METAAPI_TOKEN) {
+si (!METAAPI_TOKEN) {
   console.warn('ATTENTION: la variable d\'environnement METAAPI_TOKEN n\'est pas définie.');
 }
 
@@ -20,71 +20,71 @@ if (!METAAPI_TOKEN) {
  * MT4/MT5 (login, mot de passe, serveur). Le client n'a jamais besoin de
  * connaître MetaApi ni un quelconque token.
  */
-app.post('/provision', async (req, res) => {
+app.post ('/provision', async (req, res) => {
   const { login, password, server, platform } = req.body;
-  if (!login  !password  !server || !platform) {
+  si (!identifiant || !mot de passe || !serveur || !plateforme) {
     return res.status(400).json({ error: 'login, password, server et platform sont requis.' });
   }
 
-  try {
-    const response = await fetch(${PROVISIONING_BASE}/users/current/accounts, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  essayer {
+    const response = await fetch(`${PROVISIONING_BASE}/ users/current/accounts`, {
+      méthode : 'POST',
+      en-têtes : {
+        'Type de contenu' : 'application/json',
         'auth-token': METAAPI_TOKEN,
       },
-      body: JSON.stringify({
-        login,
-        password,
-        server,
-        platform, // 'mt4' ou 'mt5'
-        name: client-${login},
-        magic: 0,
+      corps : JSON.stringify({
+        se connecter,
+        mot de passe,
+        serveur,
+        plateforme, // 'mt4' ou 'mt5'
+        nom : `client-${login}`,
+        magie : 0,
         reliability: 'regular', // fiabilité gratuite — évite les frais "high reliability"
       }),
     });
 
     const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.message || 'Erreur MetaApi', details: data });
+    si (!response.ok) {
+      return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
     }
 
     // On ne renvoie QUE l'ID du compte — jamais le token maître.
-    return res.json({ accountId: data.id });
-  } catch (e) {
+    renvoie res.json({ accountId: data.id });
+  } attraper (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
 
 /** Récupère la région d'hébergement d'un compte (nécessaire pour l'étape suivante). */
-async function fetchRegion(accountId) {
-  const response = await fetch(${PROVISIONING_BASE}/users/current/accounts/${accountId}, {
-    headers: { 'auth-token': METAAPI_TOKEN },
+fonction asynchrone fetchRegion(accountId) {
+  const response = await fetch(`${PROVISIONING_BASE}/ users/current/accounts/${ accountId}`, {
+    en-têtes : { 'auth-token' : METAAPI_TOKEN },
   });
-  if (!response.ok) return null;
+  si (!response.ok) retourner null ;
   const data = await response.json();
-  return data.region;
+  renvoyer les données.région ;
 }
 
 /** Consulte le solde/equity/broker d'un compte client, par son accountId. */
-app.get('/account-info/:accountId', async (req, res) => {
+app.get('/account-info/: accountId', async (req, res) => {
   const { accountId } = req.params;
-  try {
-    const region = await fetchRegion(accountId);
-    if (!region) {
+  essayer {
+    const région = await fetchRegion(accountId);
+    si (!région) {
       return res.status(404).json({ error: 'Compte introuvable chez MetaApi.' });
     }
 
-    const response = await fetch(
-      https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/account-information,
+    const réponse = attendre la récupération(
+      ` https://mt-client-api-v1. ${ region}. agiliumtrade.ai/users/ current/accounts/${accountId}/ account-information` ,
       { headers: { 'auth-token': METAAPI_TOKEN } }
     );
     const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.message || 'Erreur MetaApi', details: data });
+    si (!response.ok) {
+      return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
     }
-    return res.json(data);
-  } catch (e) {
+    renvoyer res.json(données);
+  } attraper (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
@@ -94,38 +94,39 @@ app.get('/account-info/:accountId', async (req, res) => {
  * sans confirmation explicite de l'utilisateur côté app — c'est de
  * l'argent réel.
  */
-app.post('/trade/:accountId', async (req, res) => {
+app.post ('/trade/:accountId', async (req, res) => {
   const { accountId } = req.params;
   const { actionType, symbol, volume, stopLoss, takeProfit, openPrice } = req.body;
 
-  if (!actionType  !symbol  !volume) {
+  si (!actionType || !symbol || !volume) {
     return res.status(400).json({ error: 'actionType, symbol et volume sont requis.' });
   }
 
-  try {
-    const region = await fetchRegion(accountId);
-    if (!region) {
+  essayer {
+    const région = await fetchRegion(accountId);
+    si (!région) {
       return res.status(404).json({ error: 'Compte introuvable chez MetaApi.' });
     }
 
-    const body = { actionType, symbol, volume, comment: 'No_Loss AI by ManuForex' };
-    if (stopLoss) body.stopLoss = stopLoss;
-    if (takeProfit) body.takeProfit = takeProfit;
+    const body = { actionType, symbol, volume, comment: 'IA sans perte par ManuForex' };
+    si (stopLoss) corps.stopLoss = stopLoss ;
+    si (prendreProfit) corps.prendreProfit = prendreProfit;
     if (openPrice) body.openPrice = openPrice; // requis pour les ordres LIMIT/STOP
-  const response = await fetch(
-      https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/trade,
+
+    const réponse = attendre la récupération(
+      ` https://mt-client-api-v1. ${ region}. agiliumtrade.ai/users/ current/accounts/${accountId}/ trade` ,
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'auth-token': METAAPI_TOKEN },
-        body: JSON.stringify(body),
+        méthode : 'POST',
+        en-têtes : { 'Content-Type' : 'application/json', 'auth-token' : METAAPI_TOKEN },
+        corps : JSON.stringify(corps),
       }
     );
     const data = await response.json();
-    if (!response.ok) {
-      return res.status(response.status).json({ error: data.message || 'Erreur MetaApi', details: data });
+    si (!response.ok) {
+      return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
     }
-    return res.json(data);
-  } catch (e) {
+    renvoyer res.json(données);
+  } attraper (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
@@ -133,4 +134,4 @@ app.post('/trade/:accountId', async (req, res) => {
 app.get('/', (req, res) => res.send('ManuForex MT5 backend actif.'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(Serveur démarré sur le port ${PORT}));
+app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
