@@ -4,9 +4,7 @@ importer fetch depuis 'node-fetch';
 const app = express();
 app.use(express.json());
 
-// Le token maître MetaApi n'est JAMAIS écrit en dur ici — il est fourni par
-// une variable d'environnement, configurée uniquement sur le serveur
-// (Render/Railway), jamais dans le code source ni dans l'app mobile.
+// Le token maître MetaApi est fourni par la variable d'environnement
 const METAAPI_TOKEN = process.env.METAAPI_TOKEN;
 
 const PROVISIONING_BASE = ' https://mt-provisioning-api- v1.agiliumtrade.agiliumtrade. ai ';
@@ -16,12 +14,12 @@ si (!METAAPI_TOKEN) {
 }
 
 /**
- * Crée un compte MetaApi pour un client, à partir de ses identifiants
- * MT4/MT5 (login, mot de passe, serveur). Le client n'a jamais besoin de
- * connaître MetaApi ni un quelconque token.
+ * Crée un compte MetaApi pour un client à partir de ses identifiants MT4/MT5.
  */
 app.post ('/provision', async (req, res) => {
   const { login, password, server, platform } = req.body;
+
+  // Condition corrigée avec les opérateurs '||'
   si (!identifiant || !mot de passe || !serveur || !plateforme) {
     return res.status(400).json({ error: 'login, password, server et platform sont requis.' });
   }
@@ -40,7 +38,7 @@ app.post ('/provision', async (req, res) => {
         plateforme, // 'mt4' ou 'mt5'
         nom : `client-${login}`,
         magie : 0,
-        reliability: 'regular', // fiabilité gratuite — évite les frais "high reliability"
+        fiabilité : « régulière »,
       }),
     });
 
@@ -49,14 +47,13 @@ app.post ('/provision', async (req, res) => {
       return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
     }
 
-    // On ne renvoie QUE l'ID du compte — jamais le token maître.
     renvoie res.json({ accountId: data.id });
   } attraper (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
 
-/** Récupère la région d'hébergement d'un compte (nécessaire pour l'étape suivante). */
+/** Récupère la région d'hébergement d'un compte. */
 fonction asynchrone fetchRegion(accountId) {
   const response = await fetch(`${PROVISIONING_BASE}/ users/current/accounts/${ accountId}`, {
     en-têtes : { 'auth-token' : METAAPI_TOKEN },
@@ -66,7 +63,7 @@ fonction asynchrone fetchRegion(accountId) {
   renvoyer les données.région ;
 }
 
-/** Consulte le solde/equity/broker d'un compte client, par son accountId. */
+/** Consulte les informations du compte (solde, equity, etc.). */
 app.get('/account-info/: accountId', async (req, res) => {
   const { accountId } = req.params;
   essayer {
@@ -89,11 +86,7 @@ app.get('/account-info/: accountId', async (req, res) => {
   }
 });
 
-/**
- * Exécute un ordre réel sur le compte du client. Ne JAMAIS appeler ceci
- * sans confirmation explicite de l'utilisateur côté app — c'est de
- * l'argent réel.
- */
+/** Exécute un ordre sur le compte client. */
 app.post ('/trade/:accountId', async (req, res) => {
   const { accountId } = req.params;
   const { actionType, symbol, volume, stopLoss, takeProfit, openPrice } = req.body;
@@ -111,7 +104,7 @@ app.post ('/trade/:accountId', async (req, res) => {
     const body = { actionType, symbol, volume, comment: 'IA sans perte par ManuForex' };
     si (stopLoss) corps.stopLoss = stopLoss ;
     si (prendreProfit) corps.prendreProfit = prendreProfit;
-    if (openPrice) body.openPrice = openPrice; // requis pour les ordres LIMIT/STOP
+    si (openPrice) corps.openPrice = openPrice;
 
     const réponse = attendre la récupération(
       ` https://mt-client-api-v1. ${ region}. agiliumtrade.ai/users/ current/accounts/${accountId}/ trade` ,
