@@ -22,12 +22,12 @@ if (!METAAPI_TOKEN) {
  */
 app.post('/provision', async (req, res) => {
   const { login, password, server, platform } = req.body;
-  if (!login || !password || !server || !platform) {
+  if (!login  !password  !server || !platform) {
     return res.status(400).json({ error: 'login, password, server et platform sont requis.' });
   }
 
   try {
-    const response = await fetch(`${PROVISIONING_BASE}/users/current/accounts`, {
+    const response = await fetch(${PROVISIONING_BASE}/users/current/accounts, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -38,8 +38,9 @@ app.post('/provision', async (req, res) => {
         password,
         server,
         platform, // 'mt4' ou 'mt5'
-        name: `client-${login}`,
+        name: client-${login},
         magic: 0,
+        reliability: 'regular', // fiabilité gratuite — évite les frais "high reliability"
       }),
     });
 
@@ -57,7 +58,7 @@ app.post('/provision', async (req, res) => {
 
 /** Récupère la région d'hébergement d'un compte (nécessaire pour l'étape suivante). */
 async function fetchRegion(accountId) {
-  const response = await fetch(`${PROVISIONING_BASE}/users/current/accounts/${accountId}`, {
+  const response = await fetch(${PROVISIONING_BASE}/users/current/accounts/${accountId}, {
     headers: { 'auth-token': METAAPI_TOKEN },
   });
   if (!response.ok) return null;
@@ -75,7 +76,7 @@ app.get('/account-info/:accountId', async (req, res) => {
     }
 
     const response = await fetch(
-      `https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/account-information`,
+      https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/account-information,
       { headers: { 'auth-token': METAAPI_TOKEN } }
     );
     const data = await response.json();
@@ -97,7 +98,7 @@ app.post('/trade/:accountId', async (req, res) => {
   const { accountId } = req.params;
   const { actionType, symbol, volume, stopLoss, takeProfit, openPrice } = req.body;
 
-  if (!actionType || !symbol || !volume) {
+  if (!actionType  !symbol  !volume) {
     return res.status(400).json({ error: 'actionType, symbol et volume sont requis.' });
   }
 
@@ -111,9 +112,8 @@ app.post('/trade/:accountId', async (req, res) => {
     if (stopLoss) body.stopLoss = stopLoss;
     if (takeProfit) body.takeProfit = takeProfit;
     if (openPrice) body.openPrice = openPrice; // requis pour les ordres LIMIT/STOP
-
-    const response = await fetch(
-      `https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/trade`,
+  const response = await fetch(
+      https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/trade,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'auth-token': METAAPI_TOKEN },
@@ -133,4 +133,4 @@ app.post('/trade/:accountId', async (req, res) => {
 app.get('/', (req, res) => res.send('ManuForex MT5 backend actif.'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Serveur démarré sur le port ${PORT}`));
+app.listen(PORT, () => console.log(Serveur démarré sur le port ${PORT}));
