@@ -1,125 +1,115 @@
-importer express depuis 'express';
-importer fetch depuis 'node-fetch';
+import express from 'express';
+import fetch from 'node-fetch';
 
 const app = express();
 app.use(express.json());
 
-// Le token maître MetaApi est fourni par la variable d'environnement
 const METAAPI_TOKEN = process.env.METAAPI_TOKEN;
+const PROVISIONING_BASE = 'https://mt-provisioning-api-v1.agiliumtrade.agiliumtrade.ai';
 
-const PROVISIONING_BASE = ' https://mt-provisioning-api- v1.agiliumtrade.agiliumtrade. ai ';
-
-si (!METAAPI_TOKEN) {
+if (!METAAPI_TOKEN) {
   console.warn('ATTENTION: la variable d\'environnement METAAPI_TOKEN n\'est pas définie.');
 }
 
-/**
- * Crée un compte MetaApi pour un client à partir de ses identifiants MT4/MT5.
- */
-app.post ('/provision', async (req, res) => {
+app.post('/provision', async (req, res) => {
   const { login, password, server, platform } = req.body;
-
-  // Condition corrigée avec les opérateurs '||'
-  si (!identifiant || !mot de passe || !serveur || !plateforme) {
+  if (!login || !password || !server || !platform) {
     return res.status(400).json({ error: 'login, password, server et platform sont requis.' });
   }
 
-  essayer {
-    const response = await fetch(`${PROVISIONING_BASE}/ users/current/accounts`, {
-      méthode : 'POST',
-      en-têtes : {
-        'Type de contenu' : 'application/json',
+  try {
+    const response = await fetch(`${PROVISIONING_BASE}/users/current/accounts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
         'auth-token': METAAPI_TOKEN,
       },
-      corps : JSON.stringify({
-        se connecter,
-        mot de passe,
-        serveur,
-        plateforme, // 'mt4' ou 'mt5'
-        nom : `client-${login}`,
-        magie : 0,
-        fiabilité : « régulière »,
+      body: JSON.stringify({
+        login,
+        password,
+        server,
+        platform,
+        name: `client-${login}`,
+        magic: 0,
+        reliability: 'regular',
       }),
     });
 
     const data = await response.json();
-    si (!response.ok) {
-      return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.message || 'Erreur MetaApi', details: data });
     }
 
-    renvoie res.json({ accountId: data.id });
-  } attraper (e) {
+    return res.json({ accountId: data.id });
+  } catch (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
 
-/** Récupère la région d'hébergement d'un compte. */
-fonction asynchrone fetchRegion(accountId) {
-  const response = await fetch(`${PROVISIONING_BASE}/ users/current/accounts/${ accountId}`, {
-    en-têtes : { 'auth-token' : METAAPI_TOKEN },
+async function fetchRegion(accountId) {
+  const response = await fetch(`${PROVISIONING_BASE}/users/current/accounts/${accountId}`, {
+    headers: { 'auth-token': METAAPI_TOKEN },
   });
-  si (!response.ok) retourner null ;
+  if (!response.ok) return null;
   const data = await response.json();
-  renvoyer les données.région ;
+  return data.region;
 }
 
-/** Consulte les informations du compte (solde, equity, etc.). */
-app.get('/account-info/: accountId', async (req, res) => {
+app.get('/account-info/:accountId', async (req, res) => {
   const { accountId } = req.params;
-  essayer {
-    const région = await fetchRegion(accountId);
-    si (!région) {
+  try {
+    const region = await fetchRegion(accountId);
+    if (!region) {
       return res.status(404).json({ error: 'Compte introuvable chez MetaApi.' });
     }
 
-    const réponse = attendre la récupération(
-      ` https://mt-client-api-v1. ${ region}. agiliumtrade.ai/users/ current/accounts/${accountId}/ account-information` ,
+    const response = await fetch(
+      `https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/account-information`,
       { headers: { 'auth-token': METAAPI_TOKEN } }
     );
     const data = await response.json();
-    si (!response.ok) {
-      return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.message || 'Erreur MetaApi', details: data });
     }
-    renvoyer res.json(données);
-  } attraper (e) {
+    return res.json(data);
+  } catch (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
 
-/** Exécute un ordre sur le compte client. */
-app.post ('/trade/:accountId', async (req, res) => {
+app.post('/trade/:accountId', async (req, res) => {
   const { accountId } = req.params;
   const { actionType, symbol, volume, stopLoss, takeProfit, openPrice } = req.body;
 
-  si (!actionType || !symbol || !volume) {
+  if (!actionType || !symbol || !volume) {
     return res.status(400).json({ error: 'actionType, symbol et volume sont requis.' });
   }
 
-  essayer {
-    const région = await fetchRegion(accountId);
-    si (!région) {
+  try {
+    const region = await fetchRegion(accountId);
+    if (!region) {
       return res.status(404).json({ error: 'Compte introuvable chez MetaApi.' });
     }
 
-    const body = { actionType, symbol, volume, comment: 'IA sans perte par ManuForex' };
-    si (stopLoss) corps.stopLoss = stopLoss ;
-    si (prendreProfit) corps.prendreProfit = prendreProfit;
-    si (openPrice) corps.openPrice = openPrice;
+    const body = { actionType, symbol, volume, comment: 'No_Loss AI by ManuForex' };
+    if (stopLoss) body.stopLoss = stopLoss;
+    if (takeProfit) body.takeProfit = takeProfit;
+    if (openPrice) body.openPrice = openPrice;
 
-    const réponse = attendre la récupération(
-      ` https://mt-client-api-v1. ${ region}. agiliumtrade.ai/users/ current/accounts/${accountId}/ trade` ,
+    const response = await fetch(
+      `https://mt-client-api-v1.${region}.agiliumtrade.ai/users/current/accounts/${accountId}/trade`,
       {
-        méthode : 'POST',
-        en-têtes : { 'Content-Type' : 'application/json', 'auth-token' : METAAPI_TOKEN },
-        corps : JSON.stringify(corps),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'auth-token': METAAPI_TOKEN },
+        body: JSON.stringify(body),
       }
     );
     const data = await response.json();
-    si (!response.ok) {
-      return res.status(response.status) .json({ error: data.message || 'Erreur MetaApi', details: data });
+    if (!response.ok) {
+      return res.status(response.status).json({ error: data.message || 'Erreur MetaApi', details: data });
     }
-    renvoyer res.json(données);
-  } attraper (e) {
+    return res.json(data);
+  } catch (e) {
     return res.status(500).json({ error: String(e) });
   }
 });
